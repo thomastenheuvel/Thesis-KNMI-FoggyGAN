@@ -1,7 +1,7 @@
 FoggyGAN
 ==============================
 
-The aim of this project ct isis to ato increase training data for KNMI's existing fog detection algorithm. BSince foggy images are scarse during day, dusk and nighttime, there e is not enough training data to achieve acceptable model performance during these times of the day. Therefore, we aim to increase the training data by generating artificial fog usingg cycle-consistent generative adversarial networks.
+The aim of this project is to increase training data for KNMI's existing fog detection algorithm. Since foggy images are scarse during day, dusk and nighttime, there is not enough training data to achieve acceptable model performance during these times of the day. Therefore, we aim to increase the training data by generating artificial fog using cycle-consistent generative adversarial networks.
 
 Project Organization
 ------------
