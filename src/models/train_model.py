@@ -16,6 +16,7 @@ from keras.layers import Concatenate
 from tensorflow_addons.layers import InstanceNormalization
 from matplotlib import pyplot
 import os
+import pandas as pd
 
 # define the discriminator model
 def define_discriminator(image_shape):
@@ -126,7 +127,10 @@ def define_composite_model(g_model_1, d_model, g_model_2, image_shape):
     # define optimization algorithm configuration
     opt = Adam(lr=0.0002, beta_1=0.5)
     # compile model with weighting of least squares loss and L1 loss
-    model.compile(loss=['mse', 'mae', 'mae', 'mae'], loss_weights=[1, 5, 10, 10], optimizer=opt)
+
+    # THIS IS WHERE WE EXPERIMENT WITH WEIGHTINGS OF LOSS FUNCTIONS
+    # model.compile(loss=['mse', 'mae', 'mae', 'mae'], loss_weights=[1, 5, 10, 10], optimizer=opt)
+    model.compile(loss=['mse', 'mae', 'mae', 'mae'], loss_weights=[1, 1, 1, 1], optimizer=opt)
     return model
 
 # load and prepare training images
@@ -224,6 +228,8 @@ def train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoB, c_mode
     bat_per_epo = int(len(trainA) / n_batch)
     # calculate the number of training iterations
     n_steps = bat_per_epo * n_epochs
+    # Initialize list to store losses
+    losses = []
     # manually enumerate epochs
     for i in range(n_steps):
         # select a batch of real samples
@@ -247,18 +253,24 @@ def train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoB, c_mode
         dB_loss2 = d_model_B.train_on_batch(X_fakeB, y_fakeB)
         # summarize performance
         print('>%d, dA[%.3f,%.3f] dB[%.3f,%.3f] g[%.3f,%.3f]' % (i+1, dA_loss1,dA_loss2, dB_loss1,dB_loss2, g_loss1,g_loss2))
-        # evaluate the model performance every so often
+        losses.append([dA_loss1, dA_loss2, dB_loss1, dB_loss2, g_loss1, g_loss2])
+        # evaluate the model performance every so often and save training losses
         if (i+1) % (bat_per_epo * 1) == 0:
             # plot A->B translation
             summarize_performance(i, g_model_AtoB, trainA, 'AtoB')
             # plot B->A translation
             summarize_performance(i, g_model_BtoA, trainB, 'BtoA')
+            
+            # Save losses to dataframe every epoch
+            df = pd.DataFrame(losses, columns=['dA_loss1', 'dA_loss2', 'dB_loss1', 'dB_loss2', 'g_loss1', 'g_loss2'])
+            df.to_pickle('reports/training_losses/experiment7/losses_%06d.pkl' % (i+1))
+            
         if (i+1) % (bat_per_epo * 5) == 0:
             # save the models
             save_models(i, g_model_AtoB, g_model_BtoA)
 
 ## RUNNING THE CODE
-dataset = load_real_samples('data/processed/clear2foggy256x256.npz')
+dataset = load_real_samples('data/processed/clear2foggy256x256_EXP3.npz')
 image_shape = dataset[0].shape[1:]
 
 # generator: A -> B
